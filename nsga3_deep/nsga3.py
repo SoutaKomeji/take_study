@@ -1,13 +1,14 @@
 from math import factorial
 import numpy as np
 import random
-import xlrd
+# import xlrd
 import time
 
 # import matplotlib.pyplot as plt
 import numpy
 # import pymop.factory
 import copy
+import pandas as pd
 
 from deap import algorithms
 from deap import base
@@ -115,14 +116,24 @@ ind_gen = [0] * (NGEN + 1)
 spotData = []
 tTimeData = []
 # Excelファイル全体の読み込み
-wb = xlrd.open_workbook('preExpData.xlsx')
+# wb = xlrd.open_workbook('preExpData.xlsx')
+# pandasでread_excel
+df = pd.read_excel('preExpData.xlsx')
+
 # Excelファイル内の特定のシートの読み込み
-featureSheet = wb.sheet_by_name('特徴表')
-tTimeSheet = wb.sheet_by_name('スポット間移動時間')
+# featureSheet = wb.sheet_by_name('特徴表')
+# tTimeSheet = wb.sheet_by_name('スポット間移動時間')
+# pandasで特定のシートを読み込む
+featureSheet = pd.read_excel('preExpData.xlsx', sheet_name='特徴表')
+tTimeSheet = pd.read_excel('preExpData.xlsx', sheet_name='スポット間移動時間')
 
 for i in range(SPOT_NUM + 1):
-    spotData.append(featureSheet.row_values(i+26,1,7))
-    tTimeData.append(tTimeSheet.row_values(i+1,2,SPOT_NUM + 3))
+    # xlrdの場合
+    # spotData.append(featureSheet.row_values(i+26,1,7))
+    # tTimeData.append(tTimeSheet.row_values(i+1,2,SPOT_NUM + 3))
+    # pandasの場合
+    spotData.append(featureSheet.iloc[i+25,1:7].values)
+    tTimeData.append(tTimeSheet.iloc[i,2:SPOT_NUM + 3].values)
 
 ## 観光スポットのデータ作成終了
 
