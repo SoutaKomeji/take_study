@@ -54,6 +54,7 @@ MUTPB = 20 # ％表記でお願いします
 # 観光スポットの情報を格納する箱を用意
 # dtype = [("id","u1"),("nature", "u1"), ("landscape","u1"),("culture","u1"),("food","u1"),("shopping","u1"),("admission","u2")]
 # spotData = np.zeros(61, dtype = dtype)
+spotName = []
 spotData = []
 tTimeData = []
 stepData = []
@@ -66,20 +67,11 @@ featureSheet = pd.read_excel('preExpData.xlsx', sheet_name='特徴表')
 tTimeSheet = pd.read_excel('preExpData.xlsx', sheet_name='スポット間移動時間')
 stepSheet = pd.read_excel('preExpData.xlsx', sheet_name='スポット間移動歩数')
 
-# print("stepSheet : ",stepSheet)
-
-# # Excelファイル全体の読み込み
-# wb = xlrd.open_workbook('preExpData.xlsx')
-# # Excelファイル内の特定のシートの読み込み
-# featureSheet = wb.sheet_by_name('特徴表')
-# tTimeSheet = wb.sheet_by_name('スポット間移動時間')
-
 for i in range(SPOT_NUM + 1):
+    spotName.append(featureSheet.iloc[i+25,0])
     spotData.append(featureSheet.iloc[i+25,1:7].values)
     tTimeData.append(tTimeSheet.iloc[i,2:SPOT_NUM+3].values)
     stepData.append(stepSheet.iloc[i,2:SPOT_NUM+3].values)
-
-# print("stepData : ",stepData)
 ## 観光スポットのデータ作成終了
 # 500世代１回目（自然と移動時間）　61, 52, 37, 39, 26, 50, 56, 61
 #2000世代の時　61, 58, 55, 49, 54, 57, 50, 61
@@ -87,16 +79,20 @@ for i in range(SPOT_NUM + 1):
 print("観光スポットのリストを入力してください")
 # spot_list = [61, 58, 55, 49, 54, 57, 50, 61]#[61, 50, 24, 33, 52, 57, 25, 41, 58, 48, 46, 49, 51, 54, 61]
 spot_list = list(map(int, input().split(", ")))
-sum = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
-avg = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+sum = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+avg = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
 # print(spotData)
 # for i in spot_list:
 #     # print(i)
 #     # print(spotData[i])
 #     print(spotData[i][0])
 
-print("spot_list : ",spot_list) # sample 10世代[58, 52, 38, 55, 23, 47, 34, 36, 3, 46, 53, 58]
+spot_name = []
 
+print("spot_list : ",spot_list) # sample 10世代[58, 52, 38, 55, 23, 47, 34, 36, 3, 46, 53, 58]
+for k in spot_list:
+     spot_name.append(spotName[k])
+print("spot_name : ",spot_name)
 for i in spot_list:
     print("spotData[i] : ",spotData[i])
     if(i != 58):
@@ -113,19 +109,22 @@ for i in spot_list:
                     sum[j] += float(max(spotData[i][j+1] - 1.8, 0.0))
                     # sum[j] += float(max(spotData[i][j], 0.0))
                 # print("sum[j] : ",sum[j])
-        print("sum : ",sum)
 
 time = 0
 for j in range(len(spot_list) - 1):
-    sum[6] += tTimeData[spot_list[j]][spot_list[j]] + 20
-
+    sum[6] += tTimeData[spot_list[j]][spot_list[j+1]] + 20
+    print("tTimeData[spot_list[j]][spot_list[j+1]] : ",tTimeData[spot_list[j]][spot_list[j+1]])
+    print("spot_list[j] : ",spot_list[j])
+    sum[7] += stepData[spot_list[j]][spot_list[j+1]]
+    print("stepData[spot_list[j]][spot_list[j+1]] : ",stepData[spot_list[j]][spot_list[j+1]])
+sum[6] -= 20
 avg[6] = sum[6] / (len(spot_list) - 1)
 
 
-for i in range(len(spotData[0]) - 1):
-    # print("sum",sum[i])
-    # print("len",len(spot_list) - 2)
-    avg[i] = sum[i] / (len(spot_list) - 2)
+# for i in range(len(spotData[0]) - 1):
+#     # print("sum",sum[i])
+#     # print("len",len(spot_list) - 2)
+#     avg[i] = sum[i] / (len(spot_list) - 2)
 
-print(sum)
-print(avg)
+print("sum:",sum)
+# print(avg)
