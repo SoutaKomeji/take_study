@@ -52,9 +52,10 @@ individual_generation_show = True
 
 # Problem definition
 # PROBLEM = "dtlz2"
+
 #目的関数の数の設定
-# NOBJ = 8 #歩数なし
-NOBJ = 9 #歩数あり
+# NOBJ = 9 #歩数あり
+NOBJ = 12 #歩数，身体的疲労，精神的疲労あり
 
 K = 10
 NDIM = NOBJ + K - 1
@@ -71,9 +72,13 @@ BOUND_LOW, BOUND_UP = [],[]
 # maxList = [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
 # minList = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
 
-# 歩数あり
-maxList = [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
-minList = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+# # 歩数あり
+# maxList = [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+# minList = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+
+# 疲労，観光時間追加
+maxList = [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+minList = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
 
 # 観光スポット数
 # SPOT_NUM = 61
@@ -95,6 +100,10 @@ MUTPB = 20 # ％表記でお願いします
 # Create uniform reference point
 # ここでリファレンスポイントを作成している（NOBJ:目的関数の数，P:リファレンスポイントの次元）
 ref_points = tools.uniform_reference_points(NOBJ, P)
+
+# reference points の表示
+# for i in range(len(ref_points)):
+#     print("ref_points[",i,"]:",ref_points[i])
 
 # 任意のリファレンスポイントの追加
 # ref_points = np.append(ref_points,[[0.7,0., 0.,  0.,  0.,  0.,  0.3,  0. ]],axis=0)
@@ -131,59 +140,28 @@ stepData = []
 # Excelファイル全体の読み込み
 # wb = xlrd.open_workbook('preExpData.xlsx')
 # pandasでread_excel
-df = pd.read_excel('preExpData.xlsx')
+df = pd.read_excel('preExpData_fatigue.xlsx')
 
 # Excelファイル内の特定のシートの読み込み
 # featureSheet = wb.sheet_by_name('特徴表')
 # tTimeSheet = wb.sheet_by_name('スポット間移動時間')
 # pandasで特定のシートを読み込む
-featureSheet = pd.read_excel('preExpData.xlsx', sheet_name='特徴表')
-tTimeSheet = pd.read_excel('preExpData.xlsx', sheet_name='スポット間移動時間')
-stepSheet = pd.read_excel('preExpData.xlsx', sheet_name='スポット間移動歩数')
+featureSheet = pd.read_excel('preExpData_fatigue.xlsx', sheet_name='特徴表')
+tTimeSheet = pd.read_excel('preExpData_fatigue.xlsx', sheet_name='スポット間移動時間')
+stepSheet = pd.read_excel('preExpData_fatigue.xlsx', sheet_name='スポット間移動歩数')
 
 for i in range(SPOT_NUM + 1):
-    # xlrdの場合
-    # spotData.append(featureSheet.row_values(i+26,1,7))
-    # tTimeData.append(tTimeSheet.row_values(i+1,2,SPOT_NUM + 3))
-    # pandasの場合
-    spotData.append(featureSheet.iloc[i+25,1:7].values)
+    spotData.append(featureSheet.iloc[i+25,1:10].values)
     tTimeData.append(tTimeSheet.iloc[i,2:SPOT_NUM + 3].values)
     stepData.append(stepSheet.iloc[i,2:SPOT_NUM + 3].values)
 
+# print("spotData:", spotData)
 ## 観光スポットのデータ作成終了
 
 # ここはクラスを作っているだけ
 # Create classes
 creator.create("FitnessMin", base.Fitness, weights=(1.0,)* NOBJ)
 creator.create("Individual", list, fitness=creator.FitnessMin)
-
-# 観光コース内のコースを回る順番を作成
-# def singleCourseData(spotData, tTimeData, minSpotNum, maxSpotNum):
-#     nobj = len(spotData[0])
-#     spotNum = random.randint(minSpotNum, maxSpotNum)
-
-#     route = []
-#     # 出発地点の追加(函館駅を指定)
-#     route.append(58)
-
-#     # 全スポットから重複なしでランダムにスポットを選択する
-#     # range(x) は 0 から x-1 までの値を指す
-#     route.extend(random.sample(range(SPOT_NUM), k=spotNum))
-    
-#     # 終着地点の追加(函館駅を指定)
-#     route.append(58)
-
-#     time = 0
-#     for j in range(len(route) - 1):
-#         time += tTimeData[route[j]][route[j+1]] + 20
-    
-#     routeData = []
-#     routeData.append(route)
-#     routeData.append(time)
-
-#     routeData.append(0)
-
-#     return routeData
 
 # 観光コース内のコースを回る順番を作成(歩数あり)
 def singleCourseData(spotData, tTimeData, stepData, minSpotNum, maxSpotNum):
@@ -203,6 +181,10 @@ def singleCourseData(spotData, tTimeData, stepData, minSpotNum, maxSpotNum):
 
     time = 0
     steps = 0
+    # for j in range(len(route) - 1):
+    #     time += tTimeData[route[j]][route[j+1]] + 20
+    #     steps += stepData[route[j]][route[j+1]]
+
     for j in range(len(route) - 1):
         time += tTimeData[route[j]][route[j+1]] + 20
         steps += stepData[route[j]][route[j+1]]
@@ -216,7 +198,7 @@ def singleCourseData(spotData, tTimeData, stepData, minSpotNum, maxSpotNum):
 
     return routeData
 
-# コース評価用の関数(歩数あり)
+# コース評価用の関数
 def evaluate(spotData, tTimeData, stepData, inds):#参照しているのは単独の個体
     nature = 0
     landscape = 0
@@ -224,6 +206,9 @@ def evaluate(spotData, tTimeData, stepData, inds):#参照しているのは単�
     food = 0
     shopping = 0
     admission = 0
+    phy_fatigue = 0
+    men_fatigue = 0  
+    tour_time = 0    
     steps = 0
     time = 0
     num = 0
@@ -232,48 +217,25 @@ def evaluate(spotData, tTimeData, stepData, inds):#参照しているのは単�
     ind = toolbox.clone(inds)
 
     for j in ind[0][1:-1]:
-        nature += max(spotData[j][0] - 1.8, 0)
-        landscape += max(spotData[j][1] - 1.8, 0)
-        culture += max(spotData[j][2] - 1.8, 0)
-        food += max(spotData[j][3] - 1.8, 0)
-        shopping += max(spotData[j][4] - 1.8, 0)
-        admission += spotData[j][5]
+        nature += max(spotData[j][0] - 1.8, 0) #自然
+        landscape += max(spotData[j][1] - 1.8, 0) #風景
+        culture += max(spotData[j][2] - 1.8, 0) #文化
+        food += max(spotData[j][3] - 1.8, 0) #食
+        shopping += max(spotData[j][4] - 1.8, 0) #買い物
+        admission += spotData[j][5] #入場料
+        phy_fatigue += spotData[j][6] #身体的疲労
+        men_fatigue += spotData[j][7] #精神的疲労
+        tour_time += spotData[j][8] # 1スポットあたりの観光時間
+
+
         
     # 出発地点と終着地点を省略
     time = ind[1]
     # print("time (ind[1]): ",time)
+    # スポットの数？
     num = len(ind[0]) - 2
 
-    return nature, landscape, culture, food, shopping, admission, time, steps, num
-
-# # コース評価用の関数(歩数なし)
-# def evaluate(spotData, tTimeData,inds):#参照しているのは単独の個体
-#     nature = 0
-#     landscape = 0
-#     culture = 0
-#     food = 0
-#     shopping = 0
-#     admission = 0
-#     steps = 0
-#     time = 0
-#     num = 0
-#     # コース内の観光スポット数分
-
-#     ind = toolbox.clone(inds)
-
-#     for j in ind[0][1:-1]:
-#         nature += max(spotData[j][0] - 1.8, 0)
-#         landscape += max(spotData[j][1] - 1.8, 0)
-#         culture += max(spotData[j][2] - 1.8, 0)
-#         food += max(spotData[j][3] - 1.8, 0)
-#         shopping += max(spotData[j][4] - 1.8, 0)
-#         admission += spotData[j][5]
-        
-#     # 出発地点と終着地点を省略
-#     time = ind[1]
-#     num = len(ind[0]) - 2
-
-#     return nature, landscape, culture, food, shopping, admission, time, num
+    return nature, landscape, culture, food, shopping, admission, phy_fatigue, men_fatigue, tour_time, time, steps, num
 
 def mate(inds1, inds2, gen):
     # コースを分割する場所を決定
@@ -294,7 +256,6 @@ def mate(inds1, inds2, gen):
     # 重複があった場合に，ランダムに削除する(course1用)
     t = [x for x in set(ind1Front + ind2Behind) if (ind1Front + ind2Behind).count(x) > 1]
     t.remove(58)
-    # if(t):
     for i in t:
         loot = random.randint(0,1)
 
@@ -417,27 +378,6 @@ class ReferencePoint(list):
         self.associations_count = 0
         self.associations = []
 
-# def generate_reference_points(num_objs, num_divisions_per_obj=4):
-#     '''Generates reference points for NSGA-III selection. This code is based on
-#     `jMetal NSGA-III implementation <https://github.com/jMetal/jMetal>`_.
-#     '''
-#     # work_point : [0] * 目的関数の数
-#     # num_objs   : 目的関数の数
-#     # left       : 
-#     def gen_refs_recursive(work_point, num_objs, left, total, depth):
-#         if depth == num_objs - 1:
-#             work_point[depth] = left/total
-#             ref = ReferencePoint(copy.deepcopy(work_point))
-#             return [ref]
-#         else:
-#             res = []
-#             for i in range(left):
-#                 work_point[depth] = i/total
-#                 res = res + gen_refs_recursive(work_point, num_objs, left-i, total, depth+1)
-#             return res
-#     return gen_refs_recursive([0]*num_objs, num_objs, num_objs*num_divisions_per_obj,
-#                               num_objs*num_divisions_per_obj, 0)
-
 def associate(individuals, reference_points_data):
     '''Associates individuals to reference points and calculates niche number.
     Corresponds to Algorithm 3 of Deb & Jain (2014).'''
@@ -479,15 +419,6 @@ def niching_select(individuals, k,reference_points_data):
     steps 13-17 of Algorithm 1 and to Algorithm 4.'''
     if len(individuals) == k:
         return individuals
-
-    #individuals = copy.deepcopy(individuals)
-
-    # ideal_point = find_ideal_point(individuals)
-    # extremes = find_extreme_points(individuals)
-    # intercepts = construct_hyperplane(individuals, extremes)
-    # normalize_objectives(individuals, intercepts, ideal_point)
-
-    # reference_points = generate_reference_points(len(individuals[0].fitness.values))
 
     # 個体とリファレンスポイントの関連づけ
     associate(individuals, reference_points_data)
@@ -585,76 +516,7 @@ one_move = []
 two_nature = []
 two_calture = []
 
-
-# # 現時点では，評価値が既に正規化されている想定で書かれている．(歩数なし)
-# def best_individuals_show_for_each_reference_point(individuals):
-#     pareto_fronts = tools.sortLogNondominated(individuals, len(individuals))[0]
-#     print("len(pareto_fronts)",len(pareto_fronts))
-
-#     # リファレンスポイントと個体との関連づけ用に新規のリファレンスポイントを準備する
-#     ref_data_to_show = []
-#     # 関数の関係上，numpy.ndarray を list に変換
-#     ref_points_tolist = ref_points.tolist()
-#     # 変換したリファレンスポイントを一つずつ取り出して格納する
-#     for i in range(len(ref_points_tolist)):
-#         ref_data_to_show.append(ReferencePoint(ref_points_tolist[i]))
-#     # リファレンスポイントとパレートフロントの関連づけを行う
-#     associate(pareto_fronts, ref_data_to_show)
-
-#     # 全てのリファレンスポイントに対して，出力を行いたいときはこちら
-#     # for i in range(len(ref_data_to_show)):
-#     #     # 最短距離に対応する個体の番号を取得する
-#     #     associations_number = -1
-#     #     lowest_associations_value = 10.0
-#     #     print("reference point", ref_data_to_show[i])
-#     #     # for j in range(len(ref_data_to_show[i].associations)):
-#     #         # print(ref_data_to_show[i].associations[j])
-#     #         # print(ref_data_to_show[i].associations[j].fitness.values)
-#     #     for j in range(len(ref_data_to_show[i].associations)):
-#     #         if(lowest_associations_value > ref_data_to_show[i].associations[j].ref_point_distance):
-#     #             lowest_associations_value = ref_data_to_show[i].associations[j].ref_point_distance
-#     #             associations_number = j
-#     #     if(associations_number > -1):
-#     #         # print("associations_number",associations_number)
-#     #         print("最良個体",ref_data_to_show[i].associations[associations_number])
-#     #         print("評価値（正規化済）",ref_data_to_show[i].associations[associations_number].fitness.values)
-#     #         print("評価値（絶対値）", toolbox.evaluate(ref_data_to_show[i].associations[associations_number]))
-#     #     else:
-#     #         print("最良個体なし")
-
-#     # for k in range(len(ref_data_to_show)):
-#     #     print("ref_data_to_show[",k,"]:",ref_data_to_show[k])
-
-#     # 特定のリファレンスポイント(今回は29,34)に対して，出力を行いたいときはこちら
-#     for i in [29,34]:
-#         # 最短距離に対応する個体の番号を取得する
-#         associations_number = -1
-#         lowest_associations_value = 10.0
-#         print("reference point", ref_data_to_show[i])
-#         # for j in range(len(ref_data_to_show[i].associations)):
-#             # print(ref_data_to_show[i].associations[j])
-#             # print(ref_data_to_show[i].associations[j].fitness.values)
-#         for j in range(len(ref_data_to_show[i].associations)):
-#             if(lowest_associations_value > ref_data_to_show[i].associations[j].ref_point_distance):
-#                 lowest_associations_value = ref_data_to_show[i].associations[j].ref_point_distance
-#                 associations_number = j
-#         if(associations_number > -1):
-#             # print("associations_number",associations_number)
-#             print("最良個体",ref_data_to_show[i].associations[associations_number])
-#             inds_value = toolbox.evaluate(ref_data_to_show[i].associations[associations_number])
-#             print("評価値（正規化済）",ref_data_to_show[i].associations[associations_number].fitness.values)
-#             print("評価値（絶対値）", inds_value)
-#             if(i == 29):
-#                 one_nature.append(inds_value[0])
-#                 one_move.append(inds_value[6])
-#             elif(i == 34):
-#                 two_nature.append(inds_value[0])
-#                 two_calture.append(inds_value[1])
-                
-#         else:
-#             print("最良個体なし")
-
-# 現時点では，評価値が既に正規化されている想定で書かれている．(歩数あり)
+# 現時点では，評価値が既に正規化されている想定で書かれている
 def best_individuals_show_for_each_reference_point(individuals):
     pareto_fronts = tools.sortLogNondominated(individuals, len(individuals))[0]
     print("len(pareto_fronts)",len(pareto_fronts))
@@ -673,8 +535,9 @@ def best_individuals_show_for_each_reference_point(individuals):
     # for k in range(len(ref_data_to_show)):
     #     print("ref_data_to_show[",k,"]:",ref_data_to_show[k])
 
-    # 特定のリファレンスポイント(番号はmemoに記載)に対して，出力を行いたいときはこちら
-    for i in [38,42]:
+    # 特定のリファレンスポイント(memoに対応するもの記載)に対して，出力を行いたいときはこちら
+    # 71(自然とphysical_fatigue) 75(自然と文化)
+    for i in [71,75]:
         # 最短距離に対応する個体の番号を取得する
         associations_number = -1
         lowest_associations_value = 10.0
@@ -720,7 +583,6 @@ toolbox = base.Toolbox()
 toolbox.register("attr_float", singleCourseData, spotData, tTimeData, stepData, 4, 8) #歩数あり
 toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.attr_float)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-#toolbox.register("evaluate", evaluate, spotData, tTimeData) #歩数なし
 toolbox.register("evaluate", evaluate, spotData, tTimeData, stepData) #歩数あり
 toolbox.register("mate", mate)
 toolbox.register("mutate", mutate)
@@ -730,16 +592,6 @@ toolbox.register("select",tools.selNSGA3, ref_points=ref_points)
 
 parents = toolbox.population(n=MU)
 
-
-# if parents:
-#     parents.sort()
-#     last = parents[-1]
-#     for i in range(len(parents)-2, -1, -1):
-#         if last == parents[i]:
-#             del parents[i]
-#         else:
-#             last = parents[i]
-# print("first len",len(parents))
 
 for gen in range(NGEN):
     # 生成されたコースの評価を行う
@@ -895,25 +747,10 @@ for gen in range(NGEN):
         parents_num = len(parents)
         print("後len(parents)",len(parents))
 
-    # for k in range(len(parents)):
-    #     print("parents[",k,"]", parents[k].fitness.values)
-
     if(generation_show):
         print(gen+1,"世代")
         print("============================================================================")
 
-    # print("親",parents_num," 子",offsprings_num)
-    # 交叉と突然変異した個体の生存個体数を計算
-    # survive_mate_ind = 0
-    # survive_mutate_ind = 0
-    # for i in parents:
-    #     if(i[2] == 1):
-    #         survive_mate_ind += 1
-    #         i[2] = 0
-    #     elif(i[2] == 2):
-    #         survive_mutate_ind += 1
-    #         i[2] = 0
-    #
     # print("交叉の生存率:",survive_mate_ind / (MU * CXPB // 200))
     # print("突然変異の生存率",survive_mutate_ind / (MU * MUTPB // 100))
     # survive_mate_pro.append(survive_mate_ind / (MU * CXPB // 200))
@@ -947,7 +784,6 @@ if(do_associate_individual_reference_point):
     min_value = [1.0] * len(ref_data)
     min_value_parents_id = [0] * len(ref_data)
     for i in range(len(parents)):
-        # print("個体番号", i)
         # num_associate_rp[i] は個体番号[i]のリファレンスポイントとの近さを表す
         # print(num_associate_rp[i])
         for j in range(len(num_associate_rp[i])):
@@ -963,36 +799,12 @@ if(do_associate_individual_reference_point):
         for k in range(len(min_value_parents_id)):
             print("-----------------------------------------------------------------------------------")
             print("右のリファレンスポイントに最も近い親個体を表示する", ref_points[k])
-            # print("num_associate_rp[i][j]",num_associate_rp[min_value_parents_id[k]][k])
             print("親個体[",k,"]", toolbox.evaluate(parents[min_value_parents_id[k]]), parents[min_value_parents_id[k]])
             # print("正規化した値", kkk[k].fitness.values)
             print("リファレンスラインとの差",min_value[k])
             print("正規化した値", parents[min_value_parents_id[k]].fitness.values)
             print("最も近傍に位置するリファレンスポイント", parents[min_value_parents_id[k]].reference_point)
             print(" ")
-
-# best_individuals_show_for_each_reference_point(parents)
-
-# parents.sort()
-# for i in range(len(parents)):
-#     print(parents[i])
-
-# print("自然")
-# for i in one_nature:
-#     print(i)
-
-# print("移動時間")
-# for i in one_move:
-#     print(i)
-
-# print("自然2")
-# for i in two_nature:
-#     print(i)
-
-# print("歴史")
-# for i in two_calture:
-#     print(i)
-
 
 # print("ref_points num:", len(ref_points))
 print("min",minList)
@@ -1004,6 +816,7 @@ if(elapsed_time_show):
 
 if(individual_generation_show):
     for i in parents:
+        print("ind_gen[i]:",ind_gen[i])
         ind_gen[i[2]] += 1
     for i in range(len(ind_gen)):
         print(i,"世代:", ind_gen[i], "個体が生存")
