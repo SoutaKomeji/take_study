@@ -132,7 +132,6 @@ def singleCourseData(spotData, tTimeData, stepData, minSpotNum, maxSpotNum):
     routeData.append(steps)
 
     routeData.append(0)
-
     return routeData
 
 
@@ -181,8 +180,8 @@ def evaluate(spotData, tTimeData, stepData, inds):#参照しているのは単�
     food = 0
     shopping = 0
     admission = 0
-    phy_fatigue = 100
-    men_fatigue = 100
+    phy_fatigue = 0
+    men_fatigue = 0
     tour_time = 0    
     steps = 0
     time = 0
@@ -198,8 +197,8 @@ def evaluate(spotData, tTimeData, stepData, inds):#参照しているのは単�
         food += max(spotData[j][3] - 1.8, 0) #食
         shopping += max(spotData[j][4] - 1.8, 0) #買い物
         admission += spotData[j][5] #入場料
-        phy_fatigue -= spotData[j][6] #身体的疲労
-        men_fatigue -= spotData[j][7] #精神的疲労
+        phy_fatigue += (4 - spotData[j][6]) #身体的疲労　小さい方が良い
+        men_fatigue += (4 - spotData[j][7]) #精神的疲労　小さい方が良い
         tour_time += spotData[j][8] # 1スポットあたりの観光時間
 
 
@@ -209,6 +208,7 @@ def evaluate(spotData, tTimeData, stepData, inds):#参照しているのは単�
     # print("time (ind[1]): ",time)
     # スポットの数？
     num = len(ind[0]) - 2
+
 
     return nature, landscape, culture, food, shopping, admission, phy_fatigue, men_fatigue, tour_time, time, steps, num
 

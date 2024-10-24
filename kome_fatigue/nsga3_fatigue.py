@@ -29,21 +29,20 @@ start_time = time.time()
 # NOBJ = 9 #歩数あり
 NOBJ = 12 #歩数，身体的疲労，精神的疲労あり
 
+# 設計変数の数
 K = 10
+
+# 次元数
 NDIM = NOBJ + K - 1
+
+#　参照点の数
 P = 2
+
+# ハイパーグリッドのサイズ
 H = factorial(NOBJ + P - 1) / (factorial(P) * factorial(NOBJ - 1))
 
 # 制限時間
 timeLimit = 60 * 5
-
-# 各評価値の最大，最小値を測定
-BOUND_LOW, BOUND_UP = [],[]
-
-# # 歩数なし
-# maxList = [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
-# minList = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
-
 # # 歩数あり
 # maxList = [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
 # minList = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
@@ -60,12 +59,15 @@ SPOT_NUM = 58
 row = 26
 
 # Algorithm parameters
-MU = 500 #int(H + (4 - H % 4))
+MU = 1000 #int(H + (4 - H % 4))
 # NGEN = 10
 print("何世代で実行するか入力してください")
 NGEN = int(input())
 # NGEN = 30
+# 交叉率
 CXPB = 100 # ％表記でお願いします
+
+# 突然変異率
 MUTPB = 20 # ％表記でお願いします
 ##
 
@@ -268,6 +270,9 @@ def sel_nsga_iii(individuals, k, reference_points_data):
     # 個体数が生存個体数を超過した時にアラート
     assert len(individuals) >= k
 
+    print("sel_nsga3_k:",k)
+    print("len(individuals):",len(individuals))
+
     # 個体数が生存個体数より少ない時，そのまま個体を返す
     if len(individuals)==k:
         return individuals
@@ -324,9 +329,10 @@ def best_individuals_show_for_each_reference_point(individuals):
         ref_data_to_show.append(ReferencePoint(ref_points_tolist[i]))
     # リファレンスポイントとパレートフロントの関連づけを行う
     associate(pareto_fronts, ref_data_to_show)
+    print()
 
     # 特定のリファレンスポイント(memoに対応するもの記載)に対して，出力を行いたいときはこちら
-    # 71(自然とphysical_fatigue) 75(自然と文化) 72(自然とmental_fatigue)
+    # 71(自然とphysical_fatigue) 75(自然と文化) 70(自然とmental_fatigue)
     for i in [70,71,75]:
         # 最短距離に対応する個体の番号を取得する
         associations_number = -1
@@ -339,7 +345,10 @@ def best_individuals_show_for_each_reference_point(individuals):
         elif i == 70:
             print("自然とmental_fatigue")
         print("reference point", ref_data_to_show[i])
+        print("len(ref_data_to_show[i].associations)",len(ref_data_to_show[i].associations))
+
         for j in range(len(ref_data_to_show[i].associations)):
+            print("ref_data_to_show[i].associations[j].ref_point_distance:",ref_data_to_show[i].associations[j].ref_point_distance)
             if(lowest_associations_value > ref_data_to_show[i].associations[j].ref_point_distance):
                 lowest_associations_value = ref_data_to_show[i].associations[j].ref_point_distance
                 associations_number = j
@@ -352,7 +361,9 @@ def best_individuals_show_for_each_reference_point(individuals):
             #　自然:0，風景:1，文化:2，食:3，買い物:4，料金:5，phy:6, men:7, spottime:8, 観光移動時間:9，観光歩数:10，スポットの数:11
             if(i == 71):
                 one_nature.append(inds_value[0])
+                print("inds_value[0]",inds_value[0])
                 one_phy.append(inds_value[6])
+                print("inds_value[6]",inds_value[6])
             elif(i == 75):
                 two_nature.append(inds_value[0])
                 two_culture.append(inds_value[2])
@@ -362,6 +373,7 @@ def best_individuals_show_for_each_reference_point(individuals):
                 
         else:
             print("最良個体なし")
+
 
 toolbox = base.Toolbox()
 toolbox.register("attr_float", makeRoute.singleCourseData, spotData, tTimeData, stepData, 4, 8) #歩数あり
@@ -374,16 +386,19 @@ toolbox.register("normalized", normalizedInd)
 toolbox.register("select",tools.selNSGA3, ref_points=ref_points)
 # toolbox.register("select", tools.selNSGA3WithMemory(ref_points))
 
+# 個体数
 parents = toolbox.population(n=MU)
 
 
-for gen in range(NGEN):
+for gen in range(1, NGEN):
     # 生成されたコースの評価を行う
     # print("evaluate : Start")
 
     for i in range(len(parents)):
         # print("parents[i][0]",parents[i][0])
         parents[i].fitness.values = toolbox.evaluate(parents[i])
+        # print("evaluate : ",parents[i].fitness.values)
+        # print("parents[i].fitness.values",parents[i].fitness.values)
 
     # リファレンスポイントと個体の関連性を保存する容器
     ref_data = []
@@ -411,7 +426,8 @@ for gen in range(NGEN):
             # 交叉する親個体を選ぶセクション
             num = random.sample(range(len(parents)), 2)
             # 選択した親を交叉させるセクション
-            child1, child2 = toolbox.mate(toolbox.clone(parents[num[0]]),toolbox.clone(parents[num[1]]),0)
+            child1, child2 = toolbox.mate(toolbox.clone(parents[num[0]]),toolbox.clone(parents[num[1]]),gen)
+
             if(debug.mate_check):
                 print("交叉する親個体A：",num[0],parents[num[0]],"交叉により生まれたchild1：", child1)
                 print("交叉する親個体B：",num[1],parents[num[1]],"交叉により生まれたchild2：", child2)
@@ -426,7 +442,7 @@ for gen in range(NGEN):
         for i in random.sample(range(len(parents)),MU * MUTPB // 100):
             # 複製した個体を変異させる
             c = copy.deepcopy(parents[i])
-            mutant = toolbox.mutate(c,0)
+            mutant = toolbox.mutate(c,gen)
             if(debug.mutate_check):
                 print("突然変異する親個体A：",i,parents[i])
                 print("突然変異した個体：", mutant)
@@ -582,8 +598,10 @@ if(debug.individual_generation_show):
     for i in parents:
         # print("ind_gen[i]:",ind_gen[i])
         ind_gen[int(i[3])] += 1
+
     for i in range(len(ind_gen)):
-        print(i,"世代:", ind_gen[i], "個体が生存")
+        if i!= 0:
+            print(i,"世代:", ind_gen[i], "個体が生存")
 
 if(debug.offsprings_survive_rate_show):
     print("新たに生成された個体の生存率の推移")

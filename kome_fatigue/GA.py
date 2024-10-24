@@ -187,7 +187,8 @@ def mate(inds1, inds2, gen):
 
     return type(ind1)(childA), type(ind1)(childB)
 
-def mutate(ind,gen): # [[61, 43, 42, 20] 560]
+def mutate(ind,gen): # [[61, 43, 42, 20] 560
+    # print(ind)
 
     loot = 0
     if(len(ind[0]) > 3):

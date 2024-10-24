@@ -4,11 +4,12 @@ do_mutate = True
 do_normalize = True
 do_select = True
 
+
+#下のやつ基本false
 individual_check = False
 mate_check = False
 mutate_check = False
 select_check = False
-
 offsprings_duplicate_delete = False
 duplicate_delete_before_select = True
 duplicate_delete_after_select= False

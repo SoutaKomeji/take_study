@@ -94,7 +94,7 @@ print("観光スポットのリストを入力してください")
 spot_list = list(map(int, input().split(", ")))
 # [自然，風景:1，文化，食，買い物，料金:5，phy:6, men:7, spottime, 観光移動時間:9，観光歩数，スポットの数:11]
 sum = [0.0,0.0,0.0,0.0,0.0,0.0,100.0,100.0,0.0,0.0,0.0,0.0]
-avg = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+avg = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
 # print(spotData)
 # for i in spot_list:
 #     # print(i)
@@ -136,6 +136,11 @@ for j in range(len(spot_list) - 1):
     sum[10] += stepData[spot_list[j]][spot_list[j+1]]
     print("stepData[spot_list[j]][spot_list[j+1]] : ",stepData[spot_list[j]][spot_list[j+1]])
 sum[8] -= 20
+
+for i in range(len(spotData[0]) - 1):
+    # print("sum",sum[i])
+    # print("len",len(spot_list) - 2)
+    avg[i] = sum[i] / (len(spot_list) - 2)
 # avg[6] = sum[6] / (len(spot_list) - 1)
 
 
