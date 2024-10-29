@@ -104,35 +104,35 @@ for i in range(SPOT_NUM + 1):
 # print("spotData:", spotData)
 ## 観光スポットのデータ作成終了
 
-# 観光コース内のコースを回る順番を作成(歩数あり)
-def singleCourseData(spotData, tTimeData, stepData, minSpotNum, maxSpotNum):
-    nobj = len(spotData[0])
-    spotNum = random.randint(minSpotNum, maxSpotNum)
+# # 観光コース内のコースを回る順番を作成(歩数あり)
+# def singleCourseData(spotData, tTimeData, stepData, minSpotNum, maxSpotNum):
+#     nobj = len(spotData[0])
+#     spotNum = random.randint(minSpotNum, maxSpotNum)
 
-    route = []
-    # 出発地点の追加(函館駅を指定)
-    route.append(58)
+#     route = []
+#     # 出発地点の追加(函館駅を指定)
+#     route.append(58)
 
-    # 全スポットから重複なしでランダムにスポットを選択する
-    # range(x) は 0 から x-1 までの値を指す
-    route.extend(random.sample(range(SPOT_NUM), k=spotNum))
+#     # 全スポットから重複なしでランダムにスポットを選択する
+#     # range(x) は 0 から x-1 までの値を指す
+#     route.extend(random.sample(range(SPOT_NUM), k=spotNum))
     
-    # 終着地点の追加(函館駅を指定)
-    route.append(58)
+#     # 終着地点の追加(函館駅を指定)
+#     route.append(58)
 
-    time = 0
-    steps = 0
-    for j in range(len(route) - 1):
-        time += tTimeData[route[j]][route[j+1]] + 20
-        steps += stepData[route[j]][route[j+1]]
+#     time = 0
+#     steps = 0
+#     for j in range(len(route) - 1):
+#         time += tTimeData[route[j]][route[j+1]] + 20
+#         steps += stepData[route[j]][route[j+1]]
     
-    routeData = []
-    routeData.append(route)
-    routeData.append(time)
-    routeData.append(steps)
+#     routeData = []
+#     routeData.append(route)
+#     routeData.append(time)
+#     routeData.append(steps)
 
-    routeData.append(0)
-    return routeData
+#     routeData.append(0)
+#     return routeData
 
 
 # 観光コース内のコースを回る順番を作成(歩数あり)
@@ -197,8 +197,8 @@ def evaluate(spotData, tTimeData, stepData, inds):#参照しているのは単�
         food += max(spotData[j][3] - 1.8, 0) #食
         shopping += max(spotData[j][4] - 1.8, 0) #買い物
         admission += spotData[j][5] #入場料
-        phy_fatigue += (4 - spotData[j][6]) #身体的疲労　小さい方が良い
-        men_fatigue += (4 - spotData[j][7]) #精神的疲労　小さい方が良い
+        phy_fatigue += spotData[j][6] #身体的疲労　小さい方が良い
+        men_fatigue += spotData[j][7] #精神的疲労　小さい方が良い
         tour_time += spotData[j][8] # 1スポットあたりの観光時間
 
 

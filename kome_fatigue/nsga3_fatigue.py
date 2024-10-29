@@ -43,23 +43,15 @@ H = factorial(NOBJ + P - 1) / (factorial(P) * factorial(NOBJ - 1))
 
 # 制限時間
 timeLimit = 60 * 5
-# # 歩数あり
-# maxList = [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
-# minList = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
-
-# 疲労，観光時間追加
-maxList = [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
-minList = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
 
 # 観光スポット数
-# SPOT_NUM = 61
 SPOT_NUM = 58
 
 # Excelデータの読み込みを始める行番号を指定
 row = 26
 
 # Algorithm parameters
-MU = 1000 #int(H + (4 - H % 4))
+MU = 500 #int(H + (4 - H % 4))
 # NGEN = 10
 print("何世代で実行するか入力してください")
 NGEN = int(input())
@@ -74,6 +66,22 @@ MUTPB = 20 # ％表記でお願いします
 # Create uniform reference point
 # ここでリファレンスポイントを作成している（NOBJ:目的関数の数，P:リファレンスポイントの次元）
 ref_points = tools.uniform_reference_points(NOBJ, P)
+
+# for i in range(len(ref_points)):
+#     print("ref_points[",i,"]:",ref_points[i])
+
+# # 特定の条件のリファレンスポイントの追加の場合はこっちから
+# ref_points = np.array([
+#     [0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0],
+#     [0.0,0.0,0.0,0.0,0.0,0.0,0.3,0.7,0.0,0.0,0.0,0.0],
+#     [0.0,0.0,0.0,0.0,0.0,0.0,0.5,0.5,0.0,0.0,0.0,0.0],
+#     [0.0,0.0,0.0,0.0,0.0,0.0,0.7,0.3,0.0,0.0,0.0,0.0],
+#     [0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0],
+#     [0.5,0.0,0.0,0.0,0.0,0.0,0.0,0.5,0.0,0.0,0.0,0.0],
+#     [0.5,0.0,0.0,0.0,0.0,0.0,0.5,0.0,0.0,0.0,0.0,0.0]
+# ])
+
+
 
 # reference points の表示
 # for i in range(len(ref_points)):
@@ -125,8 +133,15 @@ for i in range(SPOT_NUM + 1):
 
 # ここはクラスを作っているだけ
 # Create classes
-creator.create("FitnessMin", base.Fitness, weights=(1.0,)* NOBJ)
+creator.create("FitnessMin", base.Fitness, weights=(1.0,1.0,1.0,1.0,1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0))
 creator.create("Individual", list, fitness=creator.FitnessMin)
+
+# # 疲労，観光時間追加
+maxList = [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+minList = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+
+# maxList = [-10.0] * NOBJ
+# minList = [10.0] * NOBJ
 
 def makeMinMax(pop):
     # 最大値，最小値の測定
@@ -143,17 +158,28 @@ def normalizedInd(ind):
     evaList = list(ind.fitness.values)
     for j in range(len(evaList)):
         if(minList[j] == maxList[j]): 
-            print("最大値と最小値が同じである")
+            # print("最大値と最小値が同じである")
             evaList[j] = 0.5
-        elif(j==5 or j==6):
+
+        # 最小化したいものはこっち(5は利用費，9はtime，10は観光歩数)
+        elif(j==5 or j == 6 or j ==7):
+            # print("pre_evaList[j]:",evaList[j])
             evaList[j] = 1 - ((evaList[j] - minList[j]) / (maxList[j] - minList[j]))
+            # print("evaList[j]:",evaList[j])
+
+        # 最大化したいものはこっち
         else:
             evaList[j] = (evaList[j] - minList[j]) / (maxList[j] - minList[j])
     # print("ind[1]:",ind[1])
     # 制限時間を超過した場合に，評価値にペナルティを与えている．
     if(timeLimit < ind[1]):
         for j in range(len(evaList)):
-            evaList[j] -= 1.0 * ((ind[1] - timeLimit) / 200)
+            if 0 < evaList[j] - 1.0 * ((ind[1] - timeLimit) / 200):
+                evaList[j] -= 1.0 * ((ind[1] - timeLimit) / 200)
+                # print("minusdayo")
+            else:
+                evaList[j] = 0
+            #　もとは1.0だった
 
     return tuple(evaList)
 
@@ -270,9 +296,6 @@ def sel_nsga_iii(individuals, k, reference_points_data):
     # 個体数が生存個体数を超過した時にアラート
     assert len(individuals) >= k
 
-    print("sel_nsga3_k:",k)
-    print("len(individuals):",len(individuals))
-
     # 個体数が生存個体数より少ない時，そのまま個体を返す
     if len(individuals)==k:
         return individuals
@@ -315,6 +338,8 @@ two_culture = []
 three_nature = []
 three_men = []
 
+
+
 # 現時点では，評価値が既に正規化されている想定で書かれている
 def best_individuals_show_for_each_reference_point(individuals):
     pareto_fronts = tools.sortLogNondominated(individuals, len(individuals))[0]
@@ -329,26 +354,25 @@ def best_individuals_show_for_each_reference_point(individuals):
         ref_data_to_show.append(ReferencePoint(ref_points_tolist[i]))
     # リファレンスポイントとパレートフロントの関連づけを行う
     associate(pareto_fronts, ref_data_to_show)
-    print()
 
     # 特定のリファレンスポイント(memoに対応するもの記載)に対して，出力を行いたいときはこちら
     # 71(自然とphysical_fatigue) 75(自然と文化) 70(自然とmental_fatigue)
-    for i in [70,71,75]:
+    for i in [19,70,71]:
         # 最短距離に対応する個体の番号を取得する
         associations_number = -1
         lowest_associations_value = 10.0
         print("--------------------------------------------------------------------------")
         if i == 71:
             print("自然とphysical_fatigue")
-        elif i == 75:
-            print("自然と文化")
+        elif i == 19:
+            print("men and phy")
         elif i == 70:
             print("自然とmental_fatigue")
         print("reference point", ref_data_to_show[i])
         print("len(ref_data_to_show[i].associations)",len(ref_data_to_show[i].associations))
 
         for j in range(len(ref_data_to_show[i].associations)):
-            print("ref_data_to_show[i].associations[j].ref_point_distance:",ref_data_to_show[i].associations[j].ref_point_distance)
+            # print("ref_data_to_show[i].associations[j].ref_point_distance:",ref_data_to_show[i].associations[j].ref_point_distance)
             if(lowest_associations_value > ref_data_to_show[i].associations[j].ref_point_distance):
                 lowest_associations_value = ref_data_to_show[i].associations[j].ref_point_distance
                 associations_number = j
@@ -359,20 +383,72 @@ def best_individuals_show_for_each_reference_point(individuals):
             print("評価値（正規化済）",ref_data_to_show[i].associations[associations_number].fitness.values)
             print("評価値（絶対値）", inds_value)
             #　自然:0，風景:1，文化:2，食:3，買い物:4，料金:5，phy:6, men:7, spottime:8, 観光移動時間:9，観光歩数:10，スポットの数:11
-            if(i == 71):
-                one_nature.append(inds_value[0])
-                print("inds_value[0]",inds_value[0])
-                one_phy.append(inds_value[6])
-                print("inds_value[6]",inds_value[6])
-            elif(i == 75):
-                two_nature.append(inds_value[0])
-                two_culture.append(inds_value[2])
-            elif(i == 70):
-                three_nature.append(inds_value[0])
-                three_men.append(inds_value[7])
+            # if(i == 71):
+            #     one_nature.append(inds_value[0])
+            #     print("inds_value[0]",inds_value[0])
+            #     one_phy.append(inds_value[6])
+            #     print("inds_value[6]",inds_value[6])
+            # elif(i == 75):
+            #     two_nature.append(inds_value[0])
+            #     two_culture.append(inds_value[2])
+            # elif(i == 70):
+            #     three_nature.append(inds_value[0])
+            #     three_men.append(inds_value[7])
                 
         else:
             print("最良個体なし")
+
+
+# # 特定のリファレンスポイント(memoに対応するもの記載)に対して，出力を行いたいときはこちら
+#     # 71(自然とphysical_fatigue) 75(自然と文化) 70(自然とmental_fatigue) ##条件NOBJ = 12 , P = 2
+#     # 54 55##条件NOBJ = 12 , P = 3
+#     for i in [34,49,54,55]:
+#         # 最短距離に対応する個体の番号を取得する
+#         associations_number = -1
+#         lowest_associations_value = 10.0
+#         print("--------------------------------------------------------------------------")
+#         if i == 34:
+#             print("自然0.0,身体的疲労0.0,精神的疲労1.0")
+#         elif i == 49:
+#             print("自然0.0,身体的疲労0.3,精神的疲労0.7")
+#         elif i == 2:
+#             print("自然0.0,身体的疲労0.5,精神的疲労0.5")
+#         elif i ==54:
+#             print("自然0.0,身体的疲労0.7,精神的疲労0.3")
+#         elif i ==55:
+#             print("自然0.0,身体的疲労1.0,精神的疲労0.0")
+#         elif i == 5:
+#             print("自然0.5,身体的疲労0.0,精神的疲労0.5")
+#         elif i == 6:
+#             print("自然0.5,身体的疲労0.5,精神的疲労0.0")
+
+#         print("reference point", ref_data_to_show[i])
+#         print("len(ref_data_to_show[i].associations)",len(ref_data_to_show[i].associations))
+
+#         for j in range(len(ref_data_to_show[i].associations)):
+#             # print("ref_data_to_show[i].associations[j].ref_point_distance:",ref_data_to_show[i].associations[j].ref_point_distance)
+#             if(lowest_associations_value > ref_data_to_show[i].associations[j].ref_point_distance):
+#                 lowest_associations_value = ref_data_to_show[i].associations[j].ref_point_distance
+#                 associations_number = j
+#         if(associations_number > -1):
+#             # print("associations_number",associations_number)
+#             print("最良個体",ref_data_to_show[i].associations[associations_number])
+#             inds_value = toolbox.evaluate(ref_data_to_show[i].associations[associations_number])
+#             print("評価値（正規化済）",ref_data_to_show[i].associations[associations_number].fitness.values)
+#             print("評価値（絶対値）", inds_value)
+#             #　自然:0，風景:1，文化:2，食:3，買い物:4，料金:5，phy:6, men:7, spottime:8, 観光移動時間:9，観光歩数:10，スポットの数:11
+#             if(i == 71):
+#                 one_nature.append(inds_value[0])
+#                 one_phy.append(inds_value[6])
+#             elif(i == 75):
+#                 two_nature.append(inds_value[0])
+#                 two_culture.append(inds_value[2])
+#             elif(i == 70):
+#                 three_nature.append(inds_value[0])
+#                 three_men.append(inds_value[7])
+                
+#         else:
+#             print("最良個体なし")
 
 
 toolbox = base.Toolbox()
